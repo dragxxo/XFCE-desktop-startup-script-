@@ -1,0 +1,15 @@
+#installing repo 
+pkg install x11-repo
+pkg upgrade -y
+#installing dependency 
+yes | pkg install libxfce4ui libxfce4util python ninja gettext dbus
+pip install meson
+#installing vloume slider plugin
+git clone https://gitlab.xfce.org/panel-plugins/xfce4-generic-slider.git
+cd xfce4-generic-slider
+#compiling $ appenting
+meson setup build --prefix=$PREFIX
+meson compile -C build
+meson install -C build
+cd ~
+
