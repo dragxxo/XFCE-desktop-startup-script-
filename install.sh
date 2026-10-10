@@ -1,96 +1,75 @@
-
 #!/data/data/com.termux/files/usr/bin/bash
+# Installs everything to start up the desktop
+# EXCEPT the Termux:X11 app (APK) and rish/Shizuku (set those up manually)
 
-set -e
+GREEN='\e[32m'
+RED='\e[31m'
+YELLOW='\e[33m'
+RESET='\e[0m'
 
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RESET='\033[0m'
+if [ -z "$PREFIX" ] || [ ! -d "$PREFIX" ]; then
+    echo -e "${RED}This script must be run inside Termux.${RESET}" >&2
+    exit 1
+fi
 
-echo -e "${YELLOW}Updating Termux package repositories...${RESET}"
-pkg update
+echo -e "${YELLOW}Updating package lists...${RESET}"
+pkg update -y && pkg upgrade -y || {
+    echo -e "${RED}Update failed. Check your mirror/internet.${RESET}" >&2
+    exit 1
+}
 
-echo -e "${YELLOW}Enabling X11 repository...${RESET}"
-pkg install -y x11-repo
+echo -e "${YELLOW}Enabling x11-repo...${RESET}"
+pkg install -y x11-repo || {
+    echo -e "${RED}Failed to install x11-repo.${RESET}" >&2
+    exit 1
+}
 
-echo -e "${YELLOW}Installing CLI utilities...${RESET}"
-pkg install -y \
-    coreutils \
-    findutils \
-    grep \
-    procps \
-    psmisc \
-    sed \
-    gawk \
-    util-linux
-
-echo -e "${YELLOW}Installing Shizuku/Android CLI support...${RESET}"
-pkg install -y \
-    termux-tools \
-    termux-exec
-
-echo -e "${YELLOW}Installing XFCE desktop...${RESET}"
-pkg install -y \
-    xfce4 \
-    xfce4-session \
-    xfce4-goodies
-
-echo -e "${YELLOW}Installing D-Bus...${RESET}"
-pkg install -y \
-    dbus \
-    dbus-glib
-
-echo -e "${YELLOW}Installing Termux:X11...${RESET}"
-pkg install -y \
-    termux-x11-nightly
-
-echo -e "${YELLOW}Installing GPU acceleration stack...${RESET}"
-pkg install -y \
-    mesa \
-    mesa-demos \
-    virglrenderer \
-    virglrenderer-android \
-    vulkan-loader-generic
-
-echo -e "${YELLOW}Installing audio support...${RESET}"
-pkg install -y \
-    pulseaudio \
-    pavucontrol
-
-echo -e "${GREEN}All requested display dependencies installed.${RESET}"
-
-echo
-echo "Checking required commands..."
-
-REQUIRED_COMMANDS=(
-    xfce4-session
-    dbus-launch
-    termux-x11
-    virgl_test_server_android
-    pulseaudio
-    pgrep
-    pkill
-    ps
-    xargs
+PACKAGES=(
+    xfce4              # provides xfce4-session (desktop)
+    dbus               # provides dbus-launch
+    termux-x11-nightly # provides the termux-x11 command (X server)
+    virglrenderer-android # provides virgl_test_server_android (GPU accel)
+    mesa               # gallium drivers (virpipe / llvmpipe)
+    pulseaudio         # audio server
+    procps             # pgrep, ps, pkill
+    grep
+    findutils          # xargs
+    coreutils
 )
 
-MISSING=0
+FAILED=()
+for entry in "${PACKAGES[@]}"; do
+    pkg_name="${entry%% *}"
+    echo -e "${YELLOW}Installing ${pkg_name}...${RESET}"
+    if ! pkg install -y "$pkg_name"; then
+        FAILED+=("$pkg_name")
+    fi
+done
 
-for cmd in "${REQUIRED_COMMANDS[@]}"; do
-    if command -v "$cmd" >/dev/null 2>&1; then
-        echo -e "${GREEN}[OK]${RESET} $cmd"
+echo
+echo -e "${YELLOW}Checking required commands...${RESET}"
+MISSING=0
+for cmd in xfce4-session dbus-launch termux-x11 virgl_test_server_android pulseaudio pgrep pkill xargs; do
+    if command -v "$cmd" &>/dev/null; then
+        echo -e "  ${GREEN}OK${RESET}      $cmd"
     else
-        echo "[MISSING] $cmd"
+        echo -e "  ${RED}MISSING${RESET} $cmd"
         MISSING=1
     fi
 done
 
 echo
+if [ ${#FAILED[@]} -ne 0 ]; then
+    echo -e "${RED}Failed packages: ${FAILED[*]}${RESET}"
+fi
 
-if [[ "$MISSING" -eq 0 ]]; then
-    echo -e "${GREEN}Dependency check passed.${RESET}"
+if [ "$MISSING" -eq 0 ] && [ ${#FAILED[@]} -eq 0 ]; then
+    echo -e "${GREEN}All dependencies installed.${RESET}"
+    echo "Still needed manually:"
+    echo "  - Termux:X11 app (APK)"
+    echo "  - Shizuku + ~/rish (chmod +x ~/rish), or run the script with --disable-shizuku"
 else
-    echo -e "${YELLOW}Some commands are missing. Check the output above.${RESET}"
+    echo -e "${RED}Some dependencies are missing. Re-run this script or install them manually.${RESET}"
     exit 1
 fi
 DISPLAY=$(find -iname advanced-display-5.5.3.sh)
