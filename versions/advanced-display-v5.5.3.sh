@@ -163,6 +163,10 @@ if ! $START ; then
 	else
 		dbus-launch --exit-with-session xfce4-session
 	fi
+	if $DISABLE_SHIZUKU ; then
+		sleep 3
+		echo -e "${GREEN}PLEASE OPEN TERMUX-X11 APP${RESET}"
+	fi
 	XFCE_PID=$!
 	sleep 2
 	XFCE_PID=$(pgrep -x -n xfce4-session)
