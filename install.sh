@@ -7,6 +7,26 @@ RED='\e[31m'
 YELLOW='\e[33m'
 RESET='\e[0m'
 
+#======choose an version ==========
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+VERSIONS_DIR="$SCRIPT_DIR/versions"
+LATEST_VERSION="advanced-display-v5.5.3.sh"
+echo "  - Available versions:"
+ls "$VERSIONS_DIR"
+read -r -p "Choose a version (default: latest): " VERSION
+VERSION="${VERSION:-$LATEST_VERSION}"
+DISPLAY_SCRIPT="$VERSIONS_DIR/$VERSION"
+if [ ! -f "$DISPLAY_SCRIPT" ]; then
+    echo "  - ${YELLOW}Version '$VERSION' not found. Falling back to latest.${RESET}" >&2
+    DISPLAY_SCRIPT="$VERSIONS_DIR/$LATEST_VERSION"
+fi
+if [ ! -f "$DISPLAY_SCRIPT" ]; then
+    echo "${RED}  - ERROR: Latest version not found: $DISPLAY_SCRIPT${RESET}" >&2
+    exit 1
+fi
+
+#===========installing packages==============
+
 if [ -z "$PREFIX" ] || [ ! -d "$PREFIX" ]; then
     echo -e "${RED}This script must be run inside Termux.${RESET}" >&2
     exit 1
@@ -72,8 +92,11 @@ else
     echo -e "${RED}Some dependencies are missing. Re-run this script or install them manually.${RESET}"
     exit 1
 fi
-DISPLAY=$(find -iname advanced-display-5.5.3.sh)
-ln "$DISPLAY" "$PREFIX/bin/display)
-chmod u+x "$DISPLAY"
-echo "Run your xfce desktop by running display -s"
-echo "Run display -help for help"
+
+#=============initialize=============
+ln -sfn "$DISPLAY_SCRIPT" "$PREFIX/bin/display"
+chmod u+x "$DISPLAY_SCRIPT"
+echo "  - Desktop launcher installed."
+echo "  - Run your XFCE desktop with: display -s"
+echo "  - Run display --help for help"
+
