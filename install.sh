@@ -7,6 +7,23 @@ RED='\e[31m'
 YELLOW='\e[33m'
 RESET='\e[0m'
 
+#=========Disclamer============
+
+echo "=========================================================="
+echo "                       DISCLAIMER                         "
+echo "=========================================================="
+echo "This project is experimental and provided AS-IS, without"
+echo "warranty of any kind. This script modifies Android system"
+echo "settings and Termux packages. Use at your own risk."
+echo "The author is not responsible for damage or data loss."
+echo "=========================================================="
+read -p "Do you accept these terms and wish to proceed? (y/N): " response
+
+if [[ ! "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    echo "Installation cancelled by user."
+    exit 1
+fi
+
 #======choose an version ==========
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 VERSIONS_DIR="$SCRIPT_DIR/versions"
