@@ -58,12 +58,6 @@ exit_xfce()
 				"RISH" -c "/system/bin/device_config delete activity_manager set_sync_disabled_for_tests"
 			fi
 			rm -f "$HOME/XFCE.log"
-#			h=$((SECONDS / 3600))
-#                        m=$(((SECONDS % 3600) / 60))
-#                        s=$((SECONDS % 60))
-#			UPTIME=$(printf "%02d:%02d:%02d" $h $m $s)
-			echo "UPTIME : $UPTIME"
-			sleep 0.5
 			pkill -TERM -s "$XFCE_SID" 2>&1
 			exit 0
 		else
