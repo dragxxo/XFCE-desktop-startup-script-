@@ -27,7 +27,7 @@ fi
 #======choose an version ==========
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 VERSIONS_DIR="$SCRIPT_DIR/versions"
-LATEST_VERSION="advanced-display-v5.5.3.sh"
+LATEST_VERSION="advanced-display-v5.5.4.sh"
 echo "  - Available versions:"
 ls "$VERSIONS_DIR"
 read -r -p "Choose a version (default: latest): " VERSION
