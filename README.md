@@ -58,7 +58,7 @@ Install or prepare these manually before or after running the installer:
 Get your XFCE desktop environment up and running instantly. Copy and paste the single command below into your Termux terminal:
 
 ```bash
-pkg update -y && pkg install git -y && git clone https://github.com && cd XFCE-desktop-startup-script- && chmod +x install.sh && ./install.sh
+pkg update -y && pkg install git -y && git clone "https://github.com/dragxxo/XFCE-desktop-startup-script-.git" && cd XFCE-desktop-startup-script- && chmod +x install.sh && ./install.sh
 ```
 
 ```text
