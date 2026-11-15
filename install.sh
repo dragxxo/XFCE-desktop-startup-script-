@@ -120,17 +120,24 @@ echo "  - Run display --help for help"
 cat > ~/.xfce-config << 'EOF'
 #change this if you want to avoid using -s (true/false)
 START=false
+
 #change it to true if you don't need hardware acceleration or use --no-gpu flag
 NO_GPU=false
+
 # change this to true if you dont need audio for browsers and some applications
 # this doesn't guarantee true no audio setup
 # you can use --no-audio flag for the same
 NO_AUDIO=false
+
 #Change this to true if you need to see verbose for every session
 # use -vv instead to see verbose for that session
 VERBOSE=false
+
 #change this to true you dont want to use shizuku bridge chnaging this may effect your xfce stability
 #if you are using android 12+ and dont want to use shizuku use adb bridge to rise the child process limit
 #if you are using android 14+ and dont want to use shizuku please disable "Disable child process restrictions" in the devoloper options
 DISABLE_SHIZUKU=false
+
+#change this to true if you need your desktop to load into landscape and false if you need potrait mode
+rotation=false
 EOF
