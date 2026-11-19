@@ -17,6 +17,7 @@ NO_GPU=false
 NO_AUDIO=false
 VERBOSE=false
 DISABLE_SHIZUKU=false
+ROTATION=false
 if [ -f ~/.xfce-config ] ; then
 	source ~/.xfce-config
 else
@@ -24,19 +25,26 @@ else
 cat > ~/.xfce-config << 'EOF'
 #change this if you want to avoid using -s (true/false)
 START=false
+
 #change it to true if you don't need hardware acceleration or use --no-gpu flag
 NO_GPU=false
+
 # change this to true if you dont need audio for browsers and some applications
 # this doesn't guarantee true no audio setup
 # you can use --no-audio flag for the same
 NO_AUDIO=false
+
 #Change this to true if you need to see verbose for every session
 # use -vv instead to see verbose for that session
 VERBOSE=false
+
 #change this to true you dont want to use shizuku bridge chnaging this may effect your xfce stability
 #if you are using android 12+ and dont want to use shizuku use adb bridge to rise the child process limit
 #if you are using android 14+ and dont want to use shizuku please disable "Disable child process restrictions" in the devoloper options
 DISABLE_SHIZUKU=false
+
+#change this to true if you need your desktop to load into landscape and false if you need potrait mode
+ROTATION=false
 EOF
 	source ~/.xfce-config
 fi
@@ -77,14 +85,16 @@ termux_x11()
 show_version()
 {
 	echo -e "${YELLOW}VERSION 5.5.5"
-	echo -e "EXPERIMENTAL"
+	echo -e "STABLE"
 }
 show_help()
 {
-	echo -e "${GREEN}usage : display $0 [options]${RESET}"
+	echo -e "${GREEN}usage : display [options] ${RESET}"
 	echo -e "${GREEN}  -s, --start${BLUE}     	Start the session"
 	echo -e "${GREEN}  --no-gpu${BLUE}        	Disable GPU acceleration"
 	echo -e "${GREEN}  --no-audio${BLUE}      	Disable audio output"
+	echo -e "${GREEN}  -r, --rotation${BLUE}\tStart the desktop in landscape (alias: --landscape)${RESET}"
+        echo -e "${GREEN}  --portrait${BLUE}\t\tStart the desktop in portrait mode${RESET}"
 	echo -e "${GREEN}  -vv, --verbose${BLUE}  	Enable verbose logging"
 	echo -e "${GREEN}  -h, --help${BLUE}      	Show this help message"
 	echo -e "${GREEN}  -v, --version${BLUE} 	To show the current version${RESET}"
@@ -102,11 +112,18 @@ exit_xfce()
 			if ! $DISABLE_SHIZUKU ; then
 				load_rish
 				sleep 1
-				"$RISH" -c "/system/bin/device_config delete activity_manager max_phantom_processes"
-				"$RISH" -c "/system/bin/device_config delete activity_manager set_sync_disabled_for_tests"
+				"$RISH" -c "/system/bin/device_config delete activity_manager max_phantom_processes" >/dev/null 2>&1
+				sleep 0.25
+				"$RISH" -c "/system/bin/device_config delete activity_manager set_sync_disabled_for_tests" >/dev/null 2>&1
+				sleep 0.25
+				"$RISH" -c "settings put system user_rotation 0" >/dev/null 2>&1
 			fi
 			rm -f "$HOME/XFCE.log"
 			pkill -TERM -s "$XFCE_SID" 2>&1
+			sleep 1
+			if kill -0 -f termux-x11 ; then
+				pkill -TERM -s "$XFCE_SID" 2>&1
+			fi
 			exit 0
 		else
 			echo -e "${RED}INVALID SESSION ID: PLEASE KILL THIS SESSION MANUALLY${RESET}"
@@ -118,6 +135,7 @@ exit_xfce()
 		exit 1
 	fi
 }
+trap exit_xfce SIGINT SIGTERM SIGHUP
 if [[ $DISABLE_SHIZUKU != true ]] ; then
 	DISABLE_SHIZUKU=false
 fi
@@ -130,6 +148,8 @@ while [[ $# -gt 0 ]]; do
 		--disable-shizuku|--disable-rish) DISABLE_SHIZUKU=true && START=true ;;
 		-h|--help) 			  show_help
 			exit 0 ;;
+		-r|--rotation|--landscape)      ROTATION=true && START=true ;;
+                --portrait)                     ROTATION=false && START=true ;;
 		-e|--stop) 			  exit_xfce ;;
 		-v|--version) 			  show_version
 			exit 0 ;;
@@ -189,6 +209,18 @@ if [[ $START == "true" ]] ; then
 	sleep 2
 	if ! $DISABLE_SHIZUKU ; then
 		"$RISH" -c  "am start -n com.termux.x11/.MainActivity" >/dev/null 2>&1 || kill "$virgl_PID" "$X11_PID";
+		if  $ROTATION ; then
+			"$RISH" -c "settings put system user_rotation 1" >/dev/null 2>&1
+		fi
+	fi
+	if command -v picom &>/dev/null; then
+		if ! $VERBOSE ; then
+			picom --backend xrender -b &
+			xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null
+		else
+			picom --backend xrender -b &
+                        xfconf-query -c xfwm4 -p /general/use_compositing -s false
+		fi
 	fi
 	if ! $VERBOSE ; then
 		dbus-launch --exit-with-session xfce4-session > "$HOME/XFCE.log" 2>&1 &
@@ -200,7 +232,7 @@ if [[ $START == "true" ]] ; then
 		echo -e "${GREEN}PLEASE OPEN TERMUX-X11 APP${RESET}"
 	fi
 	if ! $VERBOSE ; then
- 		while true ; do
+ 		while kill -0 $(pgrep -x -n xfce4-session) 2>/dev/null; do
 			h=$((SECONDS / 3600))
 			m=$(((SECONDS % 3600) / 60))
 			s=$((SECONDS % 60))
